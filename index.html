@@ -1,79 +1,109 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GrowMore MLM & Typing Course</title>
+  <title>GrowMore Login</title>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background-color: #f4f4f4;
-    }
-    header {
-      background-color: #0e4d92;
-      color: white;
+      background: #f5f5f5;
       text-align: center;
-      padding: 1.5rem;
-    }
-    section {
       padding: 2rem;
     }
-    .card {
+    .container {
+      max-width: 400px;
+      margin: auto;
       background: white;
-      padding: 1.5rem;
+      padding: 2rem;
       border-radius: 10px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-      margin-bottom: 2rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h1, h2 {
-      margin: 0 0 1rem 0;
-    }
-    p {
+    input, button {
+      width: 100%;
+      padding: 0.75rem;
       margin: 0.5rem 0;
+      font-size: 1rem;
     }
-    .btn {
-      display: inline-block;
-      padding: 0.75rem 1.5rem;
-      background-color: #0e4d92;
-      color: white;
-      text-decoration: none;
-      border-radius: 5px;
+    #user-info {
+      display: none;
       margin-top: 1rem;
-    }
-    footer {
-      text-align: center;
-      padding: 1rem;
-      background-color: #222;
-      color: white;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>GrowMore</h1>
-    <p>Professional MLM Join Page + Typing Course</p>
-  </header>
+  <h1>GrowMore</h1>
+  <div class="container">
+    <h2>Login / Signup</h2>
+    <input type="email" id="email" placeholder="Email" />
+    <input type="password" id="password" placeholder="Password" />
+    <button onclick="login()">Login</button>
+    <button onclick="signup()">Sign Up</button><div id="user-info">
+  <p><strong>Welcome:</strong> <span id="user-email"></span></p>
+  <p><strong>Your Refer Code:</strong> <span id="refer-code"></span></p>
+  <button onclick="logout()">Logout</button>
+</div>
 
-  <section>
-    <div class="card">
-      <h2>Join Our MLM Program</h2>
-      <p>Become a part of GrowMore and unlock earning opportunities through our proven system.</p>
-      <a class="btn" href="https://wa.me/917756820819" target="_blank">Join on WhatsApp</a>
-    </div>
+  </div>  <script>
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
 
-    <div class="card">
-      <h2>Typing Course - Only ₹599</h2>
-      <p>Learn fast and accurate typing with our online course. Get certified and improve your job prospects!</p>
-      <p><strong>Course Fee:</strong> ₹599</p>
-      <p><strong>UPI ID:</strong> 7756820819@mbk</p>
-      <a class="btn" href="upi://pay?pa=7756820819@mbk&pn=GrowMore&cu=INR&am=599" target="_blank">Pay Now</a>
-    </div>
-  </section>
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
 
-  <footer>
-    <p>&copy; 2025 GrowMore | Contact: 7756820819</p>
-  </footer>
-</body>
-</html>
+    function generateReferCode(uid) {
+      return uid.substring(0, 6).toUpperCase();
+    }
+
+    function signup() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          const referCode = generateReferCode(user.uid);
+          db.ref("users/" + user.uid).set({
+            email: user.email,
+            referCode: referCode
+          });
+          showUserInfo(user.email, referCode);
+        })
+        .catch((error) => alert(error.message));
+    }
+
+    function login() {
+      const email = document.getElementById("email").value;
+      const password = document.getElementById("password").value;
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          const user = userCredential.user;
+          db.ref("users/" + user.uid).once("value", (snapshot) => {
+            const data = snapshot.val();
+            showUserInfo(user.email, data.referCode);
+          });
+        })
+        .catch((error) => alert(error.message));
+    }
+
+    function logout() {
+      auth.signOut().then(() => {
+        document.getElementById("user-info").style.display = "none";
+      });
+    }
+
+    function showUserInfo(email, referCode) {
+      document.getElementById("user-email").textContent = email;
+      document.getElementById("refer-code").textContent = referCode;
+      document.getElementById("user-info").style.display = "block";
+    }
+  </script>
